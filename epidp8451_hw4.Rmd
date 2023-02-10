@@ -8,6 +8,7 @@ library(tidyverse)
 library(dplyr)
 library(readr)
 
+
 set.seed(1)
 
 knitr::opts_chunk$set(
@@ -26,6 +27,75 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
+
+## Part 1: Implementing a Simple Prediction Pipeline
+
+Using the dataset class4_p1.csv, we will fit and evaluate two prediction models 
+using linear regression. The aim of the models are to predict the number of days 
+in a month an individual reported having good physical health (feature name: healthydays).
+
+Let's first read in our dataset and perform some data cleaning and manipulations.
+
+```{r}
+df_part1 <-
+  read_csv("data/class4_p1.csv", col_names = TRUE) %>% 
+    janitor::clean_names() %>% 
+# Let's check to see summary statistics and quick glimpse of our data.
+   glimpse()
+```
+From the output above, we notice that all our features are stored as 'dbl',
+continuous variables. Therefore, we will use the output above in addition to the 
+codebook to store our features in the intended format. In addition we will also
+remove all missing values. We remove the variable "x1" that has the count of the 
+number of observations in the dataset.
+
+```{r}
+df_part1 <-
+  df_part1 %>% 
+  ## Converting categorical variables to factor variables
+  mutate(
+     chronic1 = as.factor(chronic1), 
+     chronic3 = as.factor(chronic3),
+     chronic4 = as.factor(chronic4),
+     tobacco1 = as.factor(tobacco1), 
+     alcohol1 = as.factor(alcohol1),
+     habits5 = as.factor(habits5),
+     habits7 = as.factor(habits7),
+     agegroup = as.factor(agegroup),
+     dem3 = as.factor(dem3),
+     dem4 = as.factor(dem4),
+     dem8 = as.factor(dem8),
+     povertygroup = as.factor(povertygroup)
+  ) %>% 
+  # Let's quickly look at our dataset and the new feature types 
+    str() %>% 
+  # Delete 'x1' that shows number of observations in dataset (serves no purpose for us)
+  select(-x1) 
+    
+```
+Our categorical (factor) variables are: <br> 
+- chronic1 
+- chronic3
+- chronic4
+- tobacco1
+- alcohol1 
+- habits5
+- habits7
+- agegroup
+- dem3
+- dem4 
+- dem8 
+- povertygroup
+
+Our continuous variables are: <br>
+- bmi  
+- gpaq8totmin
+- gpaq11days
+- healthydays
+
+```{r}
+
+```
 
 
 
