@@ -52,6 +52,8 @@ number of observations in the dataset.
 ```{r}
 df_part1 <-
   df_part1 %>% 
+    # Delete 'x1' that shows number of observations in dataset (serves no purpose for us)
+  select(-x1) %>% 
   ## Converting categorical variables to factor variables
   mutate(
      chronic1 = as.factor(chronic1), 
@@ -67,10 +69,11 @@ df_part1 <-
      dem8 = as.factor(dem8),
      povertygroup = as.factor(povertygroup)
   ) %>% 
+  # Remove missing values
+  na.omit() %>% 
   # Let's quickly look at our dataset and the new feature types 
-    str() %>% 
-  # Delete 'x1' that shows number of observations in dataset (serves no purpose for us)
-  select(-x1) 
+  str() 
+
     
 ```
 Our categorical (factor) variables are: <br> 
@@ -93,6 +96,8 @@ Our continuous variables are: <br>
 - gpaq11days
 - healthydays
 
+
+Next, let's partition our dataset into training and testing 
 ```{r}
 
 ```
