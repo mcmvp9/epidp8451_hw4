@@ -7,6 +7,8 @@ output: html_document
 library(tidyverse)
 library(dplyr)
 library(readr)
+library(caret)
+library(stats)
 
 
 set.seed(1)
@@ -69,40 +71,49 @@ df_part1 <-
      dem8 = as.factor(dem8),
      povertygroup = as.factor(povertygroup)
   ) %>% 
-  # Remove missing values
-  na.omit() %>% 
-  # Let's quickly look at our dataset and the new feature types 
-  str() 
+  # Remove all missing values
+  na.omit()
 
-    
+
+  # Let's quickly look at our dataset and the new feature types 
+  summary(df_part1)
 ```
 Our categorical (factor) variables are: <br> 
-- chronic1 
-- chronic3
-- chronic4
-- tobacco1
-- alcohol1 
-- habits5
-- habits7
-- agegroup
-- dem3
-- dem4 
-- dem8 
-- povertygroup
+chronic1, chronic3, chronic4, tobacco1, alcohol1, habits5, habits7,
+agegroup, dem3, dem4, dem8 and povertygroup.
 
 Our continuous variables are: <br>
-- bmi  
-- gpaq8totmin
-- gpaq11days
-- healthydays
+bmi, gpaq8totmin, gpaq11days and healthydays. 
 
 
-Next, let's partition our dataset into training and testing 
+Next, let's partition our dataset into training and testing using the caret package.
+
 ```{r}
+  #Create balanced partitons and ensure balance of outcome (healthydays
+partition_df <-createDataPartition(df_part1$healthydays, p=0.7, list=FALSE)
+  
+  #Let's create our training set from this partition
+df_train <- df_part1[partition_df,]
+
+  #Let's create our testing set from this partition
+df_test <- df_part1[-partition_df,]
+
+  #Let's view number of rows in each set 
+NROW(df_train) 
+NROW(df_test)
 
 ```
 
+The results above show that our training dataset contains 1,537 rows, which accounts for
+roughly 70% of the original dataset. Also, we can see that our testing dataset contains 
+658 rows, which roughly account for 30% of the original dataset. 
+We can be confident that we correctly partitioned our original dataset in the manner
+we would like, a 70/30 split.
 
 
+1. Now let's fit two prediction models using different subsets of the features in the 
+training data. <br>
+## Do I randomly select features or look at correlation matrix ?!
+In our first model, we will fit
 
 
