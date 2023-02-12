@@ -9,6 +9,7 @@ library(dplyr)
 library(readr)
 library(caret)
 library(stats)
+library(modelr)
 
 
 set.seed(1)
@@ -29,8 +30,8 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
-
-## Part 1: Implementing a Simple Prediction Pipeline
+<hr>
+## PART 1: Implementing a Simple Prediction Pipeline 
 
 Using the dataset class4_p1.csv, we will fit and evaluate two prediction models 
 using linear regression. The aim of the models are to predict the number of days 
@@ -86,7 +87,7 @@ Our continuous variables are: <br>
 bmi, gpaq8totmin, gpaq11days and healthydays. 
 
 
-Next, let's partition our dataset into training and testing using the caret package.
+### Next, let's partition our dataset into training and testing using the caret package.
 
 ```{r}
   #Create balanced partitons and ensure balance of outcome (healthydays
@@ -112,8 +113,62 @@ we would like, a 70/30 split.
 
 
 1. Now let's fit two prediction models using different subsets of the features in the 
-training data. <br>
+training data.The aim of the models are to predict the number of days in a month an 
+individual reported having good physical health (feature name: healthydays) <br>
 ## Do I randomly select features or look at correlation matrix ?!
-In our first model, we will fit
+
+In our first model, we will select the following features to predict 'healthydays' :
+dem3 + dem8 + agegroup + gpaq8totmin + habits5 + habits7
+
+```{r}
+#Model 1
+lin_model_fit1 <-
+  df_train %>% 
+     lm(healthydays ~ dem3 + dem4 + dem8 + agegroup + gpaq8totmin + habits5 + habits7 + 
+          tobacco1 + alcohol1, data = .) 
+
+```
+
+
+In our second model we will select the following features to predict 'healthydays':
+dem3 + agegroup + bmi + chronic1 + chronic3 + chronic4 + povertygroup
+
+```{r}
+#Model 2
+lin_model_fit2 <-
+  df_train %>% 
+     lm(healthydays ~ dem3 + agegroup + bmi + chronic1 +  gpaq11days +
+          chronic3 + chronic4 + povertygroup, data = .) 
+
+```
+
+2. Now let's apply both linear models fitted above to our test data. We will also 
+determine the preferred model to use for predicting 'healthdays' using the Mean 
+Square Error. We will present the MSE visually. 
+
+```{r}
+# Utilize root mean square error here to evaluate our model
+rmse(lin_model_fit2, df_test)
+rmse(lin_model_fit1, df_test)
+
+rsquare(lin_model_fit2, df_test)
+rsquare(lin_model_fit1, df_test)
+```
+### Do the step above in 1 step and make graph as well 
+
+From the application of the root mean square error in our regression models, 
+we can see that model 1 has the lowest mean square error indicating that this 
+model is better compared to model2 at predicting 'healthydays'.  
+
+3. One setting where the implementation of the model selected here would be useful
+is in the clinical setting at primary care visits for adults. This model could help 
+doctors make recommendations about how their patients improve or have helathier days 
+in a month based on the features in the model.
+
+<hr>
+## PART 2: Conducting an Unsupervised Analysis
+<hr>
+
+
 
 
