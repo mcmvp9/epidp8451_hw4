@@ -153,6 +153,9 @@ rmse(lin_model_fit1, df_test)
 
 rsquare(lin_model_fit2, df_test)
 rsquare(lin_model_fit1, df_test)
+
+summary(lin_model_fit1)$adj.r.squared
+summary(lin_model_fit2)$adj.r.squared
 ```
 ### Do the step above in 1 step and make graph as well 
 
@@ -167,8 +170,71 @@ in a month based on the features in the model.
 
 <hr>
 ## PART 2: Conducting an Unsupervised Analysis
-<hr>
 
 
+Using the built-in R dataset USArrests we identified clusters using hierarchical analysis. 
+In addtiion,, we Used an agglomerative algorithm for hierarchical clustering and a 
+Euclidian distance measure to construct our dissimilarity matrix.
 
+```{r}
+## Read in USArrests dataset and save as df_part2
+  data("USArrests") 
+
+  df_part2 <-
+    USArrests %>% 
+    as_tibble() %>% 
+    janitor::clean_names()
+  
+## Let's see roughly what this dataset looks like and check to see if any missing values exist 
+  glimpse(df_part2)
+```
+From the 'glimpse' function, we see that all our features are of a continuous data type.
+
+```{r}
+## Let's check to see if there are any missing values for our features 
+which(is.na(df_part2))
+```
+It appears that there aren't any missing values in our dataset. For this problem, 
+we would like to eliminate missing values.
+ 
+```{r}
+## Let's check the means and standard deviations of our features 
+colMeans(df_part2)
+apply(df_part2, 2, sd, na.rm=TRUE)
+```
+By checking the means and standard deviations of our features, we notice that their
+values are not similar. Therefore, we need to center and scale our features before 
+performing clustering so that we have a standard deviation of 1 and a mean of zero.
+ 
+```{r}
+## Let's perform scaling and centering here 
+df_part2 <-
+  df_part2 %>% 
+    scale(center=TRUE, scale = TRUE)
+
+## Let's check the new mean and std after the scaling process
+colMeans(df_part2)
+apply(df_part2, 2, sd, na.rm=TRUE)
+```
+4. We now see that our means are similar in addition to our standard deviation. We 
+will now proceed to perform our hierarchical clustering. <br>
+First, we had to decided cluster dissimilarity. 
+We used a "euclidean" method to calculate the distance and performed 
+hierarchical clustering using "complete linkage".
+
+```{r}
+## Let's create a dissimilarity matrix 
+part2_diss_matrix <- 
+  dist(df_part2, method = "euclidean")
+
+# Let's perform agglomerative Hierarchical clustering using Complete Linkage
+clusters_fit <- 
+  hclust(part2_diss_matrix, method = "complete" )
+
+# Let's plot the obtained dendrogram
+plot(clusters_fit, cex = 0.6, hang = -1)
+```
+
+
+4. 
 
