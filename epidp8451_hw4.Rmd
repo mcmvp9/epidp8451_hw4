@@ -34,8 +34,8 @@ scale_fill_discrete = scale_fill_viridis_d
 
 <hr>
 ## PART 1: Implementing a Simple Prediction Pipeline 
-*** SEED WAS SET PRIOR TO BEGINNING 
-
+*** IMPORTANT: SEED WAS SET GLOBALLY PRIOR TO BEGINNING THIS ASSIGNMENT AS CODE WAS RUN CHRONILOGICALLY
+*** PACKAGES WERE LOADED BEFORE BEGINNING ANALYSIS FOR THIS ASSIGNMENT <br>
 Using the dataset class4_p1.csv, we will fit and evaluate two prediction models 
 using linear regression. The aim of the models are to predict the number of days 
 in a month an individual reported having good physical health (feature name: healthydays).
@@ -81,6 +81,7 @@ df_part1 <-
 
   # Let's quickly look at our dataset and the new feature types 
   summary(df_part1)
+
 ```
 Our categorical (factor) variables are: <br> 
 chronic1, chronic3, chronic4, tobacco1, alcohol1, habits5, habits7,
@@ -89,18 +90,35 @@ agegroup, dem3, dem4, dem8 and povertygroup.
 Our continuous variables are: <br>
 bmi, gpaq8totmin, gpaq11days and healthydays. 
 
+### Scaling and Centering 
+
+Before, we partition our dataset, we will scale and center all the numeric features
+in our data. 
+
+```{r}
+scaled_part1 <- 
+  df_part1 %>%
+    select(bmi,gpaq8totmin, gpaq11days) %>% 
+      scale(center=TRUE, scale = TRUE)
+
+## Bind scaled variables to original dataset
+df_part1_final <-
+  df_part1 %>% 
+       select(-bmi,-gpaq8totmin, -gpaq11days) %>% 
+           cbind(scaled_part1)
+```
 
 ### Next, let's partition our dataset into training and testing using the caret package.
 
 ```{r}
   #Create balanced partitons and ensure balance of outcome (healthydays
-partition_df <-createDataPartition(df_part1$healthydays, p=0.7, list=FALSE)
+partition_df <-createDataPartition(df_part1_final$healthydays, p=0.7, list=FALSE)
   
   #Let's create our training set from this partition
-df_train <- df_part1[partition_df,]
+df_train <- df_part1_final[partition_df,]
 
   #Let's create our testing set from this partition
-df_test <- df_part1[-partition_df,]
+df_test <- df_part1_final[-partition_df,]
 
   #Let's view number of rows in each set 
 NROW(df_train) 
@@ -120,20 +138,21 @@ training data.The aim of the models are to predict the number of days in a month
 individual reported having good physical health (feature name: healthydays) <br>
 
 In our first model, we will select the following features to predict 'healthydays' :
-dem3 + dem8 + agegroup + gpaq8totmin + habits5 + habits7
+dem3 + gpaq8totmin + habits5 + habits7
 
 ```{r}
 #Model 1
 lin_model_fit1 <-
   df_train %>% 
-     lm(healthydays ~ dem3 + dem4 + dem8 + agegroup + gpaq8totmin + habits5 + habits7 + 
-          tobacco1 + alcohol1, data = .) 
+     lm(healthydays ~ dem3 + bmi + gpaq8totmin + gpaq11days, data = .) 
+
+print(lin_model_fit1)
 
 ```
 
 
-In our second model we will select the following features to predict 'healthydays':
-dem3 + agegroup + bmi + chronic1 + chronic3 + chronic4 + povertygroup
+In our second model we will select the following features to predict 'healthydays': <br>
+dem3, agegroup, bmi, chronic1, chronic3, chronic4  and povertygroup
 
 ```{r}
 #Model 2
@@ -141,6 +160,8 @@ lin_model_fit2 <-
   df_train %>% 
      lm(healthydays ~ dem3 + agegroup + bmi + chronic1 +  gpaq11days +
           chronic3 + chronic4 + povertygroup, data = .) 
+
+print(lin_model_fit2)
 
 ```
 
@@ -156,21 +177,21 @@ rmse(lin_model_fit2, df_test)
 ```
 
 From the application of the root mean square error in our regression models, 
-we can see that model 1 has the lowest mean square error indicating that this 
-model is better compared to model2 at predicting 'healthydays'.  
+we can see that model 2 has the lowest mean square error indicating that this 
+model is better at predicting 'healthydays' compared to model2  . 
 
 3. One setting where the implementation of the model selected here would be useful
-is in the clinical setting at primary care visits for adults. This model could help 
-doctors make recommendations about how their patients improve or have more healthier days 
-in a month based on the features in the model.
+is in clinical healthcare for a population of older adults. An app could be used to collect 
+the features listed in model 2 from medical records with informed consent and use that information 
+to help make recommendations about how users/patients can improve or have healthier days in a month.
 
 <hr>
 ## PART 2: Conducting an Unsupervised Analysis
 
 
 Using the built-in R dataset USArrests we identified clusters using hierarchical analysis. 
-In addtiion,, we Used an agglomerative algorithm for hierarchical clustering and a 
-Euclidian distance measure to construct our dissimilarity matrix.
+In addtiion,, we used an 'agglomerative' algorithm for hierarchical clustering and a 
+'Euclidian' distance measure to construct our dissimilarity matrix.
 
 ```{r}
 ## Read in USArrests dataset and save as df_part2
@@ -185,8 +206,8 @@ From the 'glimpse' function, we see that all our features are of a continuous da
 ## Let's check to see if there are any missing values for our features 
 which(is.na(USArrests))
 ```
-It appears that there aren't any missing values in our dataset. For this problem, 
-we would like to eliminate missing values.
+It appears that there aren't any missing values in our dataset. Therefore, we can produce 
+on with our analysis. 
  
 ```{r}
 ## Let's check the means and standard deviations of our features 
@@ -232,23 +253,25 @@ by each state in the US. <br>
 Now, we must determine the optimal number of clusters by using the gap statistic. 
 
 ```{r}
+set.seed(1)
 
 #create function to use within clusGap
 hclusCut <- function(x, k) list(cluster = cutree(hclust(dist(x, method="euclidian"), method="average"), k=k))
 
-gap_stat <-
-  clusGap(df_part2, FUN = hclusCut, K.max = 10, B = 50)
+gap_stat <-clusGap(USArrests_2, FUN = hclusCut, K.max = 10, B = 50)
 
 ## Let's plot the gap statistic
 fviz_gap_stat(gap_stat)
 ```
 
 i) From the gap statistic plot above, we can see that the optimal number of 
-clusters is 3. Now, we'll use the number of clusters from the gap statistic to 
+clusters is 2. Now, we'll use the number of clusters from the gap statistic to 
 obtain cluster assignment for each observation in the dataset. 
 
 ```{r}
-clusters_h3<-cutree(clusters_fit, k=3)
+set.seed(1)
+
+clusters_h3<-cutree(clusters_fit, k=2)
 
 table(clusters_h3) 
 
@@ -261,16 +284,16 @@ input.feature.vals %>%
 
 ```
 
-ii) The composition of each cluster in terms of the original input features 
-
-
+ii) In the states included in cluster 1, all of the features in our data (murder, assualt, rape and urban              population) are above the mean. 
+    States in cluster 2 have far lower means for the features in our data (murder, assault, rape and 
+    urban population). 
+    
 5. One research question that can be addressed using the newly identified clusters, 
-is "Does living in a state included in each individual cluster predict the number of people 
-that would be arrested for a felony crime (murder, assault, rape)?" 
+is "How does demographic population, meaning diversity of population, predict the cost of living 
+among states in the United States?"
 
 Scientific and ethical considerations to consider before using these clusters include: <br>
 - collecting data that is representative of the population to eliminate algorithmic bias <br>
 - utilizing theory from the literature and experts to determine features that are needed to be inputted into the algorithm <br>
-
-&nbsp?
+<br>
 
