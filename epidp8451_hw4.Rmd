@@ -10,7 +10,9 @@ library(readr)
 library(caret)
 library(stats)
 library(modelr)
-
+library(stats)
+library(factoextra)
+library(cluster)
 
 set.seed(1)
 
@@ -32,6 +34,7 @@ scale_fill_discrete = scale_fill_viridis_d
 
 <hr>
 ## PART 1: Implementing a Simple Prediction Pipeline 
+*** SEED WAS SET PRIOR TO BEGINNING 
 
 Using the dataset class4_p1.csv, we will fit and evaluate two prediction models 
 using linear regression. The aim of the models are to predict the number of days 
@@ -115,7 +118,6 @@ we would like, a 70/30 split.
 1. Now let's fit two prediction models using different subsets of the features in the 
 training data.The aim of the models are to predict the number of days in a month an 
 individual reported having good physical health (feature name: healthydays) <br>
-## Do I randomly select features or look at correlation matrix ?!
 
 In our first model, we will select the following features to predict 'healthydays' :
 dem3 + dem8 + agegroup + gpaq8totmin + habits5 + habits7
@@ -148,16 +150,10 @@ Square Error. We will present the MSE visually.
 
 ```{r}
 # Utilize root mean square error here to evaluate our model
-rmse(lin_model_fit2, df_test)
 rmse(lin_model_fit1, df_test)
+rmse(lin_model_fit2, df_test)
 
-rsquare(lin_model_fit2, df_test)
-rsquare(lin_model_fit1, df_test)
-
-summary(lin_model_fit1)$adj.r.squared
-summary(lin_model_fit2)$adj.r.squared
 ```
-### Do the step above in 1 step and make graph as well 
 
 From the application of the root mean square error in our regression models, 
 we can see that model 1 has the lowest mean square error indicating that this 
@@ -165,7 +161,7 @@ model is better compared to model2 at predicting 'healthydays'.
 
 3. One setting where the implementation of the model selected here would be useful
 is in the clinical setting at primary care visits for adults. This model could help 
-doctors make recommendations about how their patients improve or have helathier days 
+doctors make recommendations about how their patients improve or have more healthier days 
 in a month based on the features in the model.
 
 <hr>
@@ -178,29 +174,24 @@ Euclidian distance measure to construct our dissimilarity matrix.
 
 ```{r}
 ## Read in USArrests dataset and save as df_part2
-  data("USArrests") 
-
-  df_part2 <-
-    USArrests %>% 
-    as_tibble() %>% 
-    janitor::clean_names()
+  data("USArrests")
   
 ## Let's see roughly what this dataset looks like and check to see if any missing values exist 
-  glimpse(df_part2)
+  glimpse(USArrests)
 ```
 From the 'glimpse' function, we see that all our features are of a continuous data type.
 
 ```{r}
 ## Let's check to see if there are any missing values for our features 
-which(is.na(df_part2))
+which(is.na(USArrests))
 ```
 It appears that there aren't any missing values in our dataset. For this problem, 
 we would like to eliminate missing values.
  
 ```{r}
 ## Let's check the means and standard deviations of our features 
-colMeans(df_part2)
-apply(df_part2, 2, sd, na.rm=TRUE)
+colMeans(USArrests)
+apply(USArrests, 2, sd, na.rm=TRUE)
 ```
 By checking the means and standard deviations of our features, we notice that their
 values are not similar. Therefore, we need to center and scale our features before 
@@ -208,24 +199,24 @@ performing clustering so that we have a standard deviation of 1 and a mean of ze
  
 ```{r}
 ## Let's perform scaling and centering here 
-df_part2 <-
-  df_part2 %>% 
+USArrests_2 <-
+ USArrests %>% 
     scale(center=TRUE, scale = TRUE)
 
 ## Let's check the new mean and std after the scaling process
-colMeans(df_part2)
-apply(df_part2, 2, sd, na.rm=TRUE)
+colMeans(USArrests_2)
+apply(USArrests_2, 2, sd, na.rm=TRUE)
 ```
 4. We now see that our means are similar in addition to our standard deviation. We 
 will now proceed to perform our hierarchical clustering. <br>
-First, we had to decided cluster dissimilarity. 
-We used a "euclidean" method to calculate the distance and performed 
+First, we have to decide how to handle cluster dissimilarity. 
+We use a "euclidean" method to calculate the distance and performed 
 hierarchical clustering using "complete linkage".
 
 ```{r}
 ## Let's create a dissimilarity matrix 
 part2_diss_matrix <- 
-  dist(df_part2, method = "euclidean")
+  dist(USArrests_2, method = "euclidean")
 
 # Let's perform agglomerative Hierarchical clustering using Complete Linkage
 clusters_fit <- 
@@ -233,8 +224,53 @@ clusters_fit <-
 
 # Let's plot the obtained dendrogram
 plot(clusters_fit, cex = 0.6, hang = -1)
+
 ```
 
+From the dendrogram above, we can see the clusters of the features in our dataset
+by each state in the US. <br>
+Now, we must determine the optimal number of clusters by using the gap statistic. 
 
-4. 
+```{r}
+
+#create function to use within clusGap
+hclusCut <- function(x, k) list(cluster = cutree(hclust(dist(x, method="euclidian"), method="average"), k=k))
+
+gap_stat <-
+  clusGap(df_part2, FUN = hclusCut, K.max = 10, B = 50)
+
+## Let's plot the gap statistic
+fviz_gap_stat(gap_stat)
+```
+
+i) From the gap statistic plot above, we can see that the optimal number of 
+clusters is 3. Now, we'll use the number of clusters from the gap statistic to 
+obtain cluster assignment for each observation in the dataset. 
+
+```{r}
+clusters_h3<-cutree(clusters_fit, k=3)
+
+table(clusters_h3) 
+
+
+input.feature.vals<-cbind(USArrests_2,cluster=clusters_h3) %>% as_tibble()
+
+input.feature.vals %>%
+  group_by(cluster) %>%
+  summarise_all(mean)
+
+```
+
+ii) The composition of each cluster in terms of the original input features 
+
+
+5. One research question that can be addressed using the newly identified clusters, 
+is "Does living in a state included in each individual cluster predict the number of people 
+that would be arrested for a felony crime (murder, assault, rape)?" 
+
+Scientific and ethical considerations to consider before using these clusters include: <br>
+- collecting data that is representative of the population to eliminate algorithmic bias <br>
+- utilizing theory from the literature and experts to determine features that are needed to be inputted into the algorithm <br>
+
+&nbsp?
 
